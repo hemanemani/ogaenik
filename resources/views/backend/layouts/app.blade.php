@@ -24,16 +24,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap">
-
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
     <!-- aiz core css -->
-    <link rel="stylesheet" href="{{ asset('assets/css/vendors.css') }}">
-    @if (\App\Models\Language::where('code', Session::get('locale', Config::get('app.locale')))->first()->rtl == 1)
-        <link rel="stylesheet" href="{{ asset('assets/css/bootstrap-rtl.min.css') }}">
-    @endif
     <link rel="stylesheet" href="{{ asset('assets/css/aiz-core.css?v=') }}{{ rand(1000,9999) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/custom-style.css') }}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script>
         var AIZ = AIZ || {};
     </script>
@@ -55,7 +50,7 @@
     </div><!-- .aiz-main-wrapper -->
 
     @yield('modal')
-    <script src="{{ asset('assets/js/vendors.js') }}"></script>
+     <script src="{{ asset('assets/js/vendors.js') }}"></script>
     <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/js/dataTables.buttons.min.js') }}"></script>
     <script src="{{ asset('assets/js/jszip.min.js') }}"></script>

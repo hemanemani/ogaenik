@@ -6,7 +6,7 @@
                 <div class="aiz-topbar-item">
                     <div class="d-flex align-items-center">
                         <a class="btn btn-icon btn-circle btn-light" href="{{ route('home')}}" target="_blank" title="{{ translate('Browse Website') }}">
-                            <i class="las la-globe"></i>
+                            <i class="fa-solid fa-earth-americas"></i>
                         </a>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                     <a class="dropdown-toggle no-arrow" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="false" aria-expanded="false">
                         <span class="btn btn-icon p-1">
                             <span class=" position-relative d-inline-block">
-                                <i class="las la-bell la-2x"></i>
+                                <i class="fa-regular fa-bell fa-2x"></i>
                                 @if($orders > 0 || $sellers > 0)
                                     <span class="badge badge-dot badge-circle badge-primary position-absolute absolute-top-right"></span>
                                 @endif

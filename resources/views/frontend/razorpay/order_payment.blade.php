@@ -2,7 +2,7 @@
 <html>
 <head>
     <title></title>
-    <link rel="stylesheet" href="{{ asset('assets/css/vendors.css') }}">
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/aiz-core.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/custom-style.css') }}">
 </head>
@@ -32,7 +32,6 @@
     </section>
 
     <!-- SCRIPTS -->
-    <script src="{{ asset('assets/js/vendors.js') }}"></script>
 
     <script type="text/javascript">
         $(document).ready(function(){

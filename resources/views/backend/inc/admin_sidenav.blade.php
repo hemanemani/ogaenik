@@ -161,28 +161,29 @@
                                 <span class="aiz-side-nav-text">{{translate('Product Reviews')}}</span>
                             </a>
                         </li>
+                    </ul>
 
                     <!-- Sales -->
-                <li class="aiz-side-nav-item">
-                    <a href="#" class="aiz-side-nav-link">
-                        <i class="las la-money-bill aiz-side-nav-icon"></i>
-                        <span class="aiz-side-nav-text">{{translate('Sales')}} </span> 
-                        <span class="aiz-side-nav-arrow"></span>
-                    </a>
-                    <!--Submenu-->
-                    <ul class="aiz-side-nav-list level-2">
-                        
+                    <li class="aiz-side-nav-item">
+                        <a href="#" class="aiz-side-nav-link">
+                            <i class="las la-money-bill aiz-side-nav-icon"></i>
+                            <span class="aiz-side-nav-text">{{translate('Sales')}} </span> 
+                            <span class="aiz-side-nav-arrow"></span>
+                        </a>
+                        <!--Submenu-->
+                        <ul class="aiz-side-nav-list level-2">
+                            
 
-                        @if(Auth::user()->user_type == 'admin' || in_array('4', json_decode(Auth::user()->staff->role->permissions)))
-                            <li class="aiz-side-nav-item">
-                                <a href="{{ route('inhouse_orders.index') }}" class="aiz-side-nav-link {{ areActiveRoutes(['inhouse_orders.index', 'inhouse_orders.show'])}}" >
-                                    <span class="aiz-side-nav-text">{{translate('Active orders')}} </span> 
-                                </a>
-                            </li>
-							 
-                        @endif
-                    </ul>
-                </li>
+                            @if(Auth::user()->user_type == 'admin' || in_array('4', json_decode(Auth::user()->staff->role->permissions)))
+                                <li class="aiz-side-nav-item">
+                                    <a href="{{ route('inhouse_orders.index') }}" class="aiz-side-nav-link {{ areActiveRoutes(['inhouse_orders.index', 'inhouse_orders.show'])}}" >
+                                        <span class="aiz-side-nav-text">{{translate('Active orders')}} </span> 
+                                    </a>
+                                </li>
+                                
+                            @endif
+                        </ul>
+                    </li>
                      
 
                 

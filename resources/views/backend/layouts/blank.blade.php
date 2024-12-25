@@ -17,8 +17,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
 
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+    
     <!-- aiz core css -->
-    <link rel="stylesheet" href="{{ asset('assets/css/vendors.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/aiz-core.css?v=') }}{{ rand(1000,9999) }}">
 
     <style>
@@ -142,7 +143,7 @@
         </div>
 
     </div><!-- .aiz-main-wrapper -->
-    <script src="{{ asset('assets/js/vendors.js') }}" ></script>
+     <script src="{{ asset('assets/js/vendors.js') }}"></script>
     <script src="{{ asset('assets/js/aiz-core.js?v=') }}{{ rand(1000,9999) }}" ></script>
 
     @yield('script')

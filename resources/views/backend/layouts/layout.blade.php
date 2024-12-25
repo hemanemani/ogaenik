@@ -20,10 +20,9 @@
 	<!-- google font -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700">
 
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
 	<!-- aiz core css -->
-	<link rel="stylesheet" href="{{ asset('assets/css/vendors.css') }}">
     @if(\App\Models\Language::where('code', Session::get('locale', Config::get('app.locale')))->first()->rtl == 1)
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap-rtl.min.css') }}">
     @endif
 	<link rel="stylesheet" href="{{ asset('assets/css/aiz-core.css?v=') }}{{ rand(1000,9999) }}">
 
@@ -69,8 +68,7 @@
 
     @yield('modal')
 
-
-    <script src="{{ asset('assets/js/vendors.js') }}" ></script>
+    <script src="{{ asset('assets/js/vendors.js') }}"></script>
     <script src="{{ asset('assets/js/aiz-core.js?v=') }}{{ rand(1000,9999) }}" ></script>
 
     @yield('script')

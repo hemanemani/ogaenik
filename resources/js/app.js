@@ -1,7 +1,8 @@
 import { createApp } from 'vue';
 import ExampleComponent from './components/ExampleComponent.vue';
 import $ from 'jquery';
-
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 /**
  * First we will load all of this project's JavaScript dependencies which

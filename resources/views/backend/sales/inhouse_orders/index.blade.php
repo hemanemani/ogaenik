@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $refund_request_addon = \App\Addon::where('unique_identifier', 'refund_request')->first();
+    $refund_request_addon = \App\Models\Addon::where('unique_identifier', 'refund_request')->first();
 @endphp
 
 <div class="card">
@@ -11,11 +11,6 @@
         <div class="col text-center text-md-left">
           <h5 class="mb-md-0 h6">{{ translate('Inhouse Orders') }}</h5>
         </div>
-        
-         
-
-         
-         
           
       </div>
    
@@ -116,7 +111,6 @@
 
 @section('modal')
     @include('modals.delete_modal')
-    @include('modals.delete_temmodal')
 @endsection
 
 @section('script')

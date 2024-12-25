@@ -110,7 +110,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
     Route::group(['middleware' => ['app_user_unbanned']], function () {
         // customer downloadable product list
         Route::get('/digital/purchased-list', 'App\Http\Controllers\Api\V2\PurchaseHistoryController@digital_purchased_list')->middleware('auth:sanctum');
-        Route::get('/purchased-products/download/{id}', 'App\Http\Controllers\Api\V2\DigitalProductController@download')->middleware('auth:sanctum');
 
         Route::get('wallet/history', [WalletController::class, 'walletRechargeHistory'])->middleware('auth:sanctum');
 

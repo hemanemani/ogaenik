@@ -67,23 +67,7 @@
                                 }
                             @endphp
 
-                        {{-- Shop Product Related Notifications --}}
-                        @elseif ($notification->type == 'App\Notifications\ShopProductNotification')
-                            @php
-                                $product_id     = $notification->data['id'];
-                                $product_type   = $notification->data['type'];
-                                $lang           = env('DEFAULT_LANGUAGE');
-                                $route = $user_type == 'admin'
-                                    ? ( $product_type == 'physical'
-                                        ? route('products.seller.edit', ['id'=>$product_id, 'lang'=>$lang])
-                                        : route('digitalproducts.edit', ['id'=>$product_id, 'lang'=>$lang] ))
-                                    : ( $product_type == 'physical'
-                                        ? route('seller.products.edit', ['id'=>$product_id, 'lang'=>$lang])
-                                        : route('seller.digitalproducts.edit',  ['id'=>$product_id, 'lang'=>$lang] ));
-                                $productName = "<a href='".$route."'>".$notification->data['name']."</a>";
-
-                                $notifyContent = str_replace('[[product_name]]', $productName, $notifyContent);
-                            @endphp
+                       
 
                         {{-- Seller Payout Notifications --}}
                         @elseif ($notification->type == 'App\Notifications\PayoutNotification')

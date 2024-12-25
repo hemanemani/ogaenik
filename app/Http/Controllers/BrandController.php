@@ -7,31 +7,27 @@ use App\Models\Brand;
 use App\Models\BrandTranslation;
 use App\Models\Product;
 use Illuminate\Support\Str;
-
+use App\Models\User;
 class BrandController extends Controller
 {
-    public function __construct() {
-        // Staff Permission Check
-        $this->middleware(['permission:view_all_brands'])->only('index');
-        $this->middleware(['permission:add_brand'])->only('create');
-        $this->middleware(['permission:edit_brand'])->only('edit');
-        $this->middleware(['permission:delete_brand'])->only('destroy');
-    }
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response 
      */
     public function index(Request $request)
     {
-        $sort_search =null;
-        $brands = Brand::orderBy('name', 'asc');
-        if ($request->has('search')){
-            $sort_search = $request->search;
-            $brands = $brands->where('name', 'like', '%'.$sort_search.'%');
+        // $brands = Brand::orderBy('created_at', 'desc')->get();
+        $brands = Brand::withCount('products')
+                   ->orderBy('created_at', 'desc')
+                   ->get();
+        
+        foreach ($brands as $brand) {
+        $brand->company_name = User::where('id', $brand->user_id)->value('companyname');
         }
-        $brands = $brands->paginate(15);
-        return view('backend.product.brands.index', compact('brands', 'sort_search'));
+        
+        
+        return view('backend.product.brands.index', compact('brands'));
     }
 
     /**
@@ -53,6 +49,7 @@ class BrandController extends Controller
     {
         $brand = new Brand;
         $brand->name = $request->name;
+		$brand->alpha_order = $request->alpha_order;
         $brand->meta_title = $request->meta_title;
         $brand->meta_description = $request->meta_description;
         if ($request->slug != null) {
@@ -95,7 +92,13 @@ class BrandController extends Controller
     {
         $lang   = $request->lang;
         $brand  = Brand::findOrFail($id);
-        return view('backend.product.brands.edit', compact('brand','lang'));
+        $company_name = User::where('id', $brand->user_id)->value('companyname');
+        
+        
+        $brandProducts = $brand->products;
+
+        
+        return view('backend.product.brands.edit', compact('brand','lang','company_name','brandProducts'));
     }
 
     /**
@@ -106,12 +109,20 @@ class BrandController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
+    { 
+		//dd($request->all());
+		$user = User::where('brand_id',$id)->first();
+		//dd($user);
+		$user->avatar_original = $request->logo;
+		$user->save();
+		
         $brand = Brand::findOrFail($id);
         if($request->lang == env("DEFAULT_LANGUAGE")){
             $brand->name = $request->name;
         }
+		$brand->alpha_order = $request->alpha_order;
         $brand->meta_title = $request->meta_title;
+		$brand->status = 1;
         $brand->meta_description = $request->meta_description;
         if ($request->slug != null) {
             $brand->slug = strtolower($request->slug);
@@ -140,12 +151,40 @@ class BrandController extends Controller
     public function destroy($id)
     {
         $brand = Brand::findOrFail($id);
-        $brand->brand_translations()->delete();
-        Product::where('brand_id', $brand->id)->update(['brand_id' => null]);
-        Brand::destroy($id);
+        Product::where('brand_id', $brand->id)->forcedelete();
+        foreach ($brand->brand_translations as $key => $brand_translation) {
+            $brand_translation->forcedelete();
+        }
+        Brand::where('id', $id)->forcedelete(); 
+        //Brand::destroy($id);
 
         flash(translate('Brand has been deleted successfully'))->success();
         return redirect()->route('brands.index');
 
+    }
+    public function temdestroy($id)
+    {
+        $brand = Brand::findOrFail($id);
+        Product::where('brand_id', $brand->id)->delete();
+        foreach ($brand->brand_translations as $key => $brand_translation) {
+            $brand_translation->delete();
+        }
+        Brand::where('id', $id)->delete(); 
+        //Brand::destroy($id);
+
+        flash(translate('Brand has been deleted successfully'))->success();
+        return redirect()->route('brands.index');
+
+    }
+    public function updateFeatured(Request $request)
+    {
+		Product::where('brand_id', $request->id)
+        ->update(['published' => $request->status]);
+        $brand = Brand::findOrFail($request->id);
+        $brand->status = $request->status;
+        if($brand->save()){
+            return 1;
+        }
+        return 0;
     }
 }

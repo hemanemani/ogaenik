@@ -87,7 +87,7 @@ Route::controller(AizUploadController::class)->group(function () {
     Route::get('/aiz-uploader/download/{id}', 'attachment_download')->name('download_attachment');
 });
 
-Route::group(['middleware' => ['prevent-back-history','handle-demo-login']], function () {
+Route::group(['middleware' => ['handle-demo-login']], function () {
     Auth::routes(['verify' => true]);
 });
 
@@ -250,7 +250,7 @@ Route::resource('subscribers', SubscriberController::class);
 Route::group(['middleware' => ['user', 'verified', 'unbanned']], function () {
 
     Route::controller(HomeController::class)->group(function () {
-        Route::get('/dashboard', 'dashboard')->name('dashboard')->middleware(['prevent-back-history']);
+        Route::get('/dashboard', 'dashboard')->name('dashboard');
         Route::get('/profile', 'profile')->name('profile');
         Route::post('/new-user-verification', 'new_verify')->name('user.new.verify');
         Route::post('/new-user-email', 'update_email')->name('user.change.email');

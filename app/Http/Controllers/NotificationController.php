@@ -139,22 +139,6 @@ class NotificationController extends Controller
             $productId     = $notification->data['id'];
             $productType   = $notification->data['type'];
             $lang           = env('DEFAULT_LANGUAGE');
-            if($userType == 'admin'){
-                if($productType == 'physical'){
-                    return redirect()->route('products.seller.edit', ['id'=>$productId, 'lang'=>$lang]);
-                }
-                elseif($productType == 'digital'){
-                    return redirect()->route('digitalproducts.edit', ['id'=>$productId, 'lang'=>$lang]);
-                }
-            }
-            if($userType == 'seller'){
-                if($productType == 'physical'){
-                    return redirect()->route('seller.products.edit', ['id'=>$productId, 'lang'=>$lang]);
-                }
-                elseif($productType == 'digital'){
-                    return redirect()->route('seller.digitalproducts.edit',  ['id'=>$productId, 'lang'=>$lang] );
-                }
-            }
         }
 
         // Shop Product notification redirect

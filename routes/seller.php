@@ -3,7 +3,7 @@
 use App\Http\Controllers\AizUploadController;
 
 //Upload
-Route::group(['prefix' => 'seller', 'middleware' => ['seller', 'verified', 'user', 'prevent-back-history'], 'as' => 'seller.'], function () {
+Route::group(['prefix' => 'seller', 'middleware' => ['seller', 'verified', 'user'], 'as' => 'seller.'], function () {
     Route::controller(AizUploadController::class)->group(function () {
         Route::any('/uploads', 'index')->name('uploaded-files.index');
         Route::any('/uploads/create', 'create')->name('uploads.create');
@@ -13,7 +13,7 @@ Route::group(['prefix' => 'seller', 'middleware' => ['seller', 'verified', 'user
     });
 });
 
-Route::group(['namespace' => 'App\Http\Controllers\Seller', 'prefix' => 'seller', 'middleware' => ['seller', 'verified', 'user', 'prevent-back-history'], 'as' => 'seller.'], function () {
+Route::group(['namespace' => 'App\Http\Controllers\Seller', 'prefix' => 'seller', 'middleware' => ['seller', 'verified', 'user'], 'as' => 'seller.'], function () {
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard');
     });
@@ -36,8 +36,7 @@ Route::group(['namespace' => 'App\Http\Controllers\Seller', 'prefix' => 'seller'
         Route::post('/product-search', 'product_search')->name('product.search');
         Route::post('/get-selected-products', 'get_selected_products')->name('get-selected-products');
 
-        // category-wise discount set
-        Route::get('/categories-wise-product-discount', 'categoriesWiseProductDiscount')->name('categories_wise_product_discount');
+       
         Route::post('/set-product-discount', 'setProductDiscount')->name('set_product_discount');
     });
 
@@ -49,17 +48,6 @@ Route::group(['namespace' => 'App\Http\Controllers\Seller', 'prefix' => 'seller'
             Route::get('/category', 'pdf_download_category')->name('pdf.download_category');
             Route::get('/brand', 'pdf_download_brand')->name('pdf.download_brand');
         });
-    });
-
-    // Digital Product
-    Route::controller(DigitalProductController::class)->group(function () {
-        Route::get('/digitalproducts', 'index')->name('digitalproducts');
-        Route::get('/digitalproducts/create', 'create')->name('digitalproducts.create');
-        Route::post('/digitalproducts/store', 'store')->name('digitalproducts.store');
-        Route::get('/digitalproducts/{id}/edit', 'edit')->name('digitalproducts.edit');
-        Route::post('/digitalproducts/update/{product}', 'update')->name('digitalproducts.update');
-        Route::get('/digitalproducts/destroy/{id}', 'destroy')->name('digitalproducts.destroy');
-        Route::get('/digitalproducts/download/{id}', 'download')->name('digitalproducts.download');
     });
 
     // Note

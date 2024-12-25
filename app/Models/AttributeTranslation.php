@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\PreventDemoModeChanges;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AttributeTranslation extends Model
 {
-  use PreventDemoModeChanges;
+  use SoftDeletes;
+
+  protected $dates = ['deleted_at'];
 
   protected $fillable = ['name', 'lang', 'attribute_id'];
 

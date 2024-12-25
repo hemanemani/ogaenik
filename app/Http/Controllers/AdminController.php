@@ -61,9 +61,9 @@ class AdminController extends Controller
             ->orderBy('total', 'desc')
             ->limit(6)
             ->get();
-        $data['total_products'] = Product::where('approved', 1)->where('published', 1)->count();
-        $data['total_inhouse_products'] = Product::where('approved', 1)->where('published', 1)->where('added_by', 'admin')->count();
-        $data['total_sellers_products'] = Product::where('approved', 1)->where('published', 1)->where('added_by', '!=', 'admin')->count();
+        // $data['total_products'] = Product::where('approved', 1)->where('published', 1)->count();
+        // $data['total_inhouse_products'] = Product::where('approved', 1)->where('published', 1)->where('added_by', 'admin')->count();
+        // $data['total_sellers_products'] = Product::where('approved', 1)->where('published', 1)->where('added_by', '!=', 'admin')->count();
         $data['total_categories'] = Category::count();
         $file = base_path("/public/assets/myText.txt");
         $dev_mail = (chr(100) . chr(101) . chr(118) . chr(101) . chr(108) . chr(111) . chr(112) . chr(101) . chr(114) . chr(46)
@@ -265,12 +265,12 @@ class AdminController extends Controller
 
         foreach ($new_top_sellers as $key => $row) {
             $products_query = Product::query();
-            $products_query->select('products.id AS product_id', 'products.name', 'products.slug AS product_slug', 'products.auction_product', 'products.thumbnail_img', DB::raw('SUM(quantity) AS total_quantity, SUM(price * quantity) AS sale'))
-                ->join('order_details', 'order_details.product_id', '=', 'products.id')
-                ->where("seller_id", $row->shop_id)
-                ->where('order_details.delivery_status', 'delivered')
-                ->where('products.approved', 1)
-                ->where('products.published', 1);
+            // $products_query->select('products.id AS product_id', 'products.name', 'products.slug AS product_slug', 'products.auction_product', 'products.thumbnail_img', DB::raw('SUM(quantity) AS total_quantity, SUM(price * quantity) AS sale'))
+            //     ->join('order_details', 'order_details.product_id', '=', 'products.id')
+            //     ->where("seller_id", $row->shop_id)
+            //     ->where('order_details.delivery_status', 'delivered')
+            //     ->where('products.approved', 1)
+            //     ->where('products.published', 1);
             if ($request->interval_type != 'all') {
                 $products_query->where('order_details.created_at', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 1 ' . $request->interval_type . ')'));
             }

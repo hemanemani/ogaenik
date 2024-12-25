@@ -256,14 +256,5 @@ class CategoryController extends Controller
         return view('backend.product.categories.categories_option', compact('categories'));
     }
 
-    public function categoriesWiseProductDiscount(Request $request){
-        $sort_search =null;
-        $categories = Category::orderBy('order_level', 'desc');
-        if ($request->has('search')){
-            $sort_search = $request->search;
-            $categories = $categories->where('name', 'like', '%'.$sort_search.'%');
-        }
-        $categories = $categories->paginate(15);
-        return view('backend.product.category_wise_discount.set_discount', compact('categories', 'sort_search'));
-    }
+   
 }

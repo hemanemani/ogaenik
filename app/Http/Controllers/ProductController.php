@@ -26,38 +26,12 @@ use App\Services\FrequentlyBoughtProductService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\URL;
+use App\Models\ProductStockUpdate;
+use App\Models\UploadExcel;
+
 
 class ProductController extends Controller
 {
-    protected $productService;
-    protected $productTaxService;
-    protected $productFlashDealService;
-    protected $productStockService;
-    protected $frequentlyBoughtProductService;
-
-    public function __construct(
-        ProductService $productService,
-        ProductTaxService $productTaxService,
-        ProductFlashDealService $productFlashDealService,
-        ProductStockService $productStockService,
-        FrequentlyBoughtProductService $frequentlyBoughtProductService
-    ) {
-        $this->productService = $productService;
-        $this->productTaxService = $productTaxService;
-        $this->productFlashDealService = $productFlashDealService;
-        $this->productStockService = $productStockService;
-        $this->frequentlyBoughtProductService = $frequentlyBoughtProductService;
-
-        // Staff Permission Check
-        $this->middleware(['permission:add_new_product'])->only('create');
-        $this->middleware(['permission:show_all_products'])->only('all_products');
-        $this->middleware(['permission:show_in_house_products'])->only('admin_products');
-        $this->middleware(['permission:show_seller_products'])->only('seller_products');
-        $this->middleware(['permission:product_edit'])->only('admin_product_edit', 'seller_product_edit');
-        $this->middleware(['permission:product_duplicate'])->only('duplicate');
-        $this->middleware(['permission:product_delete'])->only('destroy');
-        $this->middleware(['permission:set_category_wise_discount'])->only('categoriesWiseProductDiscount');
-    }
     /**
      * Display a listing of the resource.
      *
@@ -65,32 +39,32 @@ class ProductController extends Controller
      */
     public function admin_products(Request $request)
     {
+        //
+		
         $type = 'In House';
         $col_name = null;
         $query = null;
         $sort_search = null;
 
-        $products = Product::where('added_by', 'admin')->where('auction_product', 0)->where('wholesale_product', 0);
+        $products = Product::where('digital',0)->orderBy('created_at', 'desc');
 
-        if ($request->type != null) {
+        if ($request->type != null){
             $var = explode(",", $request->type);
             $col_name = $var[0];
             $query = $var[1];
             $products = $products->orderBy($col_name, $query);
             $sort_type = $request->type;
         }
-        if ($request->search != null) {
-            $sort_search = $request->search;
+        if ($request->search != null){
             $products = $products
-                ->where('name', 'like', '%' . $sort_search . '%')
-                ->orWhereHas('stocks', function ($q) use ($sort_search) {
-                    $q->where('sku', 'like', '%' . $sort_search . '%');
-                });
+                        ->where('name', 'like', '%'.$request->search.'%');
+            $sort_search = $request->search;
         }
+        
+        $products = $products->paginate(10000);
 
-        $products = $products->where('digital', 0)->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('backend.product.products.index', compact('products', 'type', 'col_name', 'query', 'sort_search'));
+        return view('backend.product.products.index', compact('products','type', 'col_name', 'query', 'sort_search'));
     }
 
     /**
@@ -269,9 +243,6 @@ class ProductController extends Controller
     public function admin_product_edit(Request $request, $id)
     {     
         $product = Product::findOrFail($id);
-        if ($product->digital == 1) {
-            return redirect('admin/digitalproducts/' . $id . '/edit');
-        }
 
         $lang = $request->lang;
         $tags = json_decode($product->tags);
@@ -291,9 +262,6 @@ class ProductController extends Controller
     public function seller_product_edit(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        if ($product->digital == 1) {
-            return redirect('digitalproducts/' . $id . '/edit');
-        }
         $lang = $request->lang;
         $tags = json_decode($product->tags);
         // $categories = Category::all();
@@ -377,6 +345,29 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+
+     public function deleteMultiple(Request $request)
+     {		
+         $ids = $request->ids;
+         Product::whereIn('id',explode(",",$ids))->delete();
+         return response()->json(['status'=>true,'message'=>"Product deleted successfully."]);
+          
+     }
+      public function updateMultiple(Request $request)
+     {		
+         $ids = $request->ids;
+         Product::whereIn('id',explode(",",$ids))->restore();
+         return response()->json(['status'=>true,'message'=>"Product Recovered successfully."]);
+          
+     }
+
+     public function temporary_delete_product(Request $request)
+     {        
+         $products = Product::onlyTrashed()->get();		
+         return view('backend.product.products.temporary_delete_index', compact('products'));
+     }
+
+
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
@@ -616,5 +607,68 @@ class ProductController extends Controller
     public function setProductDiscount(Request $request)
     {
         return $this->productService->setCategoryWiseDiscount($request->except(['_token']));
+    }
+    public function productNotify(){
+            
+            
+        $stockUpdates = ProductStockUpdate::orderBy('created_at', 'desc')->get();
+        
+         return view('backend.product.stock_notification.index', compact('stockUpdates'));
+       
+   }
+   public function product_list_admin(Request $request) 
+	{
+		 $data = UploadExcel::orderBy('created_at', 'DESC')->get();
+		 return view('backend.product.products.admin_product_listing',compact('data'));
+	} 
+    public function upload_status_listing(Request $request)
+	{		
+        $product = UploadExcel::findOrFail($request->upload_id);
+        $product->live_status = $request->getthevalue;
+        if($product->save()){
+            return 1;
+        }
+        return 0;
+	}
+    public function product_listing_delete(Request $request) 
+    {
+        $upload_excel = UploadExcel::where('id', $request->id)->forcedelete();   
+        if($upload_excel)
+        {
+             return 1;
+        }
+        return 0;
+        
+    }
+    public function temdestroy($id)
+    {
+       
+        $product = Product::findOrFail($id);
+        foreach ($product->product_translations as $key => $product_translations) {
+            $product_translations->delete();
+        }
+        $productss = Product::where('id', $id)->delete(); 
+        if($productss){
+
+            flash(translate('Product has been deleted temporarily'))->success();
+
+            Artisan::call('view:clear');
+            Artisan::call('cache:clear');
+
+            if(Auth::user()->user_type == 'admin'){
+                return redirect()->route('products.admin');
+            }
+            else{
+                return redirect()->route('seller.products');
+            }
+        }
+        else{
+            flash(translate('Something went wrong'))->error();
+            return back();
+        }
+    }
+    public function editor()
+    {
+        return view('backend.product.products.editor');
     }
 }

@@ -76,17 +76,7 @@ Route::group(['prefix' => 'v2/seller', 'middleware' => ['app_language']], functi
             Route::get('products/query-show/{id}', 'product_queries_show');
             Route::post('products/query-reply/{id}', 'product_queries_reply');
         });
-        // Digital Product Section
-        Route::controller(DigitalProductController::class)->group(function () {
-            Route::get('digital-products', 'index'); 
-            Route::get('digital-products/categories', 'getCategory');
-            Route::post('digital-products/store', 'store');
-            Route::get('digital-products/edit/{id}', 'edit');
-            Route::post('digital-products/update/{product}', 'update');
-            Route::get('digital-products/destroy/{id}', 'destroy');
-            Route::get('digital-products/download/{id}', 'download');
-
-        });
+        
 
         //Whole Sale Product Section
         Route::controller(WholesaleProductController::class)->group(function () {

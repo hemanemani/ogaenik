@@ -5,9 +5,13 @@ namespace App\Models;
 use App;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\PreventDemoModeChanges;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
+
+    use SoftDeletes;
+
     use PreventDemoModeChanges;
     
     protected $guarded = ['choice_attributes'];

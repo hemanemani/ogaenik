@@ -192,12 +192,37 @@ class HomeController extends Controller
 
     public function profile(Request $request)
     {
-        if (Auth::user()->user_type == 'seller') {
-            return redirect()->route('seller.profile.index');
-        } elseif (Auth::user()->user_type == 'delivery_boy') {
-            return view('delivery_boys.profile');
-        } else {
-            return view('frontend.user.profile');
+		
+        if(Auth::user()->user_type == 'customer'){
+			$order = OrderDetail::where('user_id',Auth::user()->id)->get();
+			$result = array();
+			foreach($order as $key=> $val)
+			{
+			  $result[$val['delivery_status']] = $val['delivery_status'];
+			}
+			$a = array_key_exists("pending",$result);
+			$b = array_key_exists("dispatched",$result);
+			$c = array_key_exists("shipped",$result);
+			$product = null;
+			//dd($a);
+			if($a == true || $b == true || $c == true)
+			{
+				$users = User::findOrFail(Auth::user()->id);
+				$users->product_status = 0;
+				$users->save();
+				
+			}
+			else
+			{
+				$users = User::findOrFail(Auth::user()->id);
+				$users->product_status = 1;
+				$users->save();
+			}	
+			//$c = $product;
+            return view('frontend.user.customer.profile');
+        }
+        elseif(Auth::user()->user_type == 'seller'){
+            return view('frontend.user.seller.profile');
         }
     }
 

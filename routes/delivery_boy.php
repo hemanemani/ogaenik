@@ -17,7 +17,7 @@
 use App\Http\Controllers\DeliveryBoyController;
 use App\Http\Controllers\OrderController;
 
-Route::group(['prefix' =>'admin', 'middleware' => ['auth', 'admin', 'prevent-back-history']], function(){
+Route::group(['prefix' =>'admin', 'middleware' => ['auth', 'admin']], function(){
     //Delivery Boy
     Route::resource('delivery-boys', DeliveryBoyController::class);
     
@@ -35,7 +35,7 @@ Route::group(['prefix' =>'admin', 'middleware' => ['auth', 'admin', 'prevent-bac
     });
 });
 
-Route::group(['middleware' => ['user', 'verified', 'unbanned', 'prevent-back-history']], function() {
+Route::group(['middleware' => ['user', 'verified', 'unbanned']], function() {
     Route::controller(DeliveryBoyController::class)->group(function () {
         Route::get('/assigned-deliveries', 'assigned_delivery')->name('assigned-deliveries');
         Route::get('/pickup-deliveries', 'pickup_delivery')->name('pickup-deliveries');

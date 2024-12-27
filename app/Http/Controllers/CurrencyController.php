@@ -3,21 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Currency;
+use App\Currency;
 
 class CurrencyController extends Controller
 {
-    public function __construct() {
-        // Staff Permission Check
-        $this->middleware(['permission:currency_setup'])->only('currency','create','edit');
-    }
 
     public function changeCurrency(Request $request)
     {
+    	$request->session()->put('currency_code', $request->currency_code);
         $currency = Currency::where('code', $request->currency_code)->first();
-        $request->session()->put('currency_code', $request->currency_code);
-        $request->session()->put('currency_symbol', $currency->symbol);
-        $request->session()->put('currency_exchange_rate', $currency->exchange_rate);
     	flash(translate('Currency changed to ').$currency->name)->success();
     }
 
@@ -85,13 +79,10 @@ class CurrencyController extends Controller
     public function update_status(Request $request)
     {
         $currency = Currency::findOrFail($request->id);
-        if($request->status == 0){
-            if (get_setting('system_default_currency') == $currency->id) {
-                return 0;
-            }
-        }
         $currency->status = $request->status;
-        $currency->save();
-        return 1;
+        if($currency->save()){
+            return 1;
+        }
+        return 0;
     }
 }

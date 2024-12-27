@@ -9,8 +9,8 @@ class CategoryUtility
     /*when with trashed is true id will get even the deleted items*/
     public static function get_immediate_children($id, $with_trashed = false, $as_array = false)
     {
-        $children = $with_trashed ? Category::where('parent_id', $id)->orderBy('order_level', 'desc')->get() : Category::where('parent_id', $id)->orderBy('order_level', 'desc')->get();
-        $children = $as_array && !is_null($children) ? $children->toArray() : $children;
+        $children = $with_trashed ? Category::where('parent_id', $id)->get() : Category::where('parent_id', $id)->get();
+        $children = $as_array && !is_null($children) ? $children->toArray() : array();
 
         return $children;
     }
@@ -21,11 +21,7 @@ class CategoryUtility
         $children = CategoryUtility::get_immediate_children($id, $with_trashed, true);
 
         return !empty($children) ? array_column($children, 'id') : array();
-    }
 
-    public static function get_immediate_children_count($id, $with_trashed = false)
-    {
-        return $with_trashed ? Category::where('parent_id', $id)->count() : Category::where('parent_id', $id)->count();
     }
 
     /*when with trashed is true id will get even the deleted items*/
@@ -38,6 +34,7 @@ class CategoryUtility
 
                 $container[] = $child;
                 $container = CategoryUtility::flat_children($child['id'], $with_trashed, $container);
+
             }
         }
 
@@ -52,65 +49,25 @@ class CategoryUtility
         return !empty($children) ? array_column($children, 'id') : array();
     }
 
-    public static function category_tree_ids($category, $category_ids)
-    {
-        foreach ($category->childrenCategories as $category) {
-            $category_ids[] = $category->id;
-
-            if (count($category->childrenCategories) > 0) {
-                $category_ids = static::category_tree_ids($category, $category_ids);
-            }
-        }
-        return $category_ids;
-    }
-
     public static function move_children_to_parent($id)
     {
         $children_ids = CategoryUtility::get_immediate_children_ids($id, true);
 
         $category = Category::where('id', $id)->first();
 
-        CategoryUtility::move_level_up($id);
+        CategoryUtility::move_lelel_up($id);
 
         Category::whereIn('id', $children_ids)->update(['parent_id' => $category->parent_id]);
+
     }
 
-    
-
-    public static function move_level_up($id)
-    {
+    public static function move_lelel_up($id){
         if (CategoryUtility::get_immediate_children_ids($id, true) > 0) {
             foreach (CategoryUtility::get_immediate_children_ids($id, true) as $value) {
                 $category = Category::find($value);
                 $category->level -= 1;
                 $category->save();
-                return CategoryUtility::move_level_up($value);
-            }
-        }
-    }
-
-    public static function move_level_down($id)
-    {
-        if (CategoryUtility::get_immediate_children_ids($id, true) > 0) {
-            foreach (CategoryUtility::get_immediate_children_ids($id, true) as $value) {
-                $category = Category::find($value);
-                $category->level += 1;
-                $category->save();
-                return CategoryUtility::move_level_down($value);
-            }
-        }
-    }
-
-    public static function update_child_level($id)
-    {
-        $get_immediate_children_ids = CategoryUtility::get_immediate_children_ids($id, true);
-        if (count($get_immediate_children_ids) > 0) {
-            $parent_category = Category::find($id);
-            foreach ($get_immediate_children_ids as $value) {
-                $category = Category::find($value);
-                $category->level = $parent_category->level + 1;
-                $category->save();
-                CategoryUtility::update_child_level($value);
+                return CategoryUtility::move_lelel_up($value);
             }
         }
     }
@@ -122,5 +79,16 @@ class CategoryUtility
             CategoryUtility::move_children_to_parent($category->id);
             $category->delete();
         }
+
     }
+    public static function temp_delete_category($id)
+    {
+        $category = Category::where('id', $id)->first();
+        if (!is_null($category)) {
+            CategoryUtility::move_children_to_parent($category->id);
+            $category->forcedelete();
+        }
+
+    }
+    
 }

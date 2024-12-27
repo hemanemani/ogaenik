@@ -164,7 +164,7 @@ class SpecialController extends Controller
         $product = Special::findOrFail($request->id);
         $product->top = $request->status;
 
-        if($product->added_by == 'seller' && \App\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
+        if($product->added_by == 'seller' && \App\Models\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Models\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
             $seller = $product->user->seller;
             if($seller->invalid_at != null && Carbon::now()->diffInDays(Carbon::parse($seller->invalid_at), false) <= 0){
                 return 0;

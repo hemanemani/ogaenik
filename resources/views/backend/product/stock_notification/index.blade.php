@@ -57,7 +57,7 @@
                              <td>
                            
                                 @php
-                                    $brands = \App\Brand::all();
+                                    $brands = \app\models\brand::all();
                                 @endphp
                                 
                                 @foreach ($brands as $brand)

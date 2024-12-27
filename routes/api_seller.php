@@ -52,7 +52,6 @@ Route::group(['prefix' => 'v2/seller', 'middleware' => ['app_language']], functi
             Route::get('products/all', 'index');
             Route::get('products/categories', 'getCategory');
             Route::get('products/brands', 'getBrands');
-            Route::get('products/taxes', 'getTaxes');
             Route::get('products/attributes', 'getAttributes');
             Route::get('products/colors', 'getColors');
             Route::post('products/add', 'store');

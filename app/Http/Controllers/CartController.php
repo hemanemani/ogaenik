@@ -2,67 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Address;
-use App\Models\Carrier;
 use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\Cart;
-use App\Models\Country;
-use Auth;
-use App\Utility\CartUtility;
+use App\Product;
+use App\SubSubCategory;
+use App\Category;
 use Session;
+use App\Color;
 use Cookie;
+use Response;
+use App\BusinessSetting;
+use View;
+use App\Cart;
+use Auth;
+use Illuminate\Support\Facades\Log;
+use App\Seller;
+use App\User;
 
 class CartController extends Controller
 {
     public function index(Request $request)
     {
-        if (auth()->user() != null) {
+        //dd($cart->all());
+        $categories = Category::all();
+		 if(auth()->user() != null) {
             $user_id = Auth::user()->id;
-            if ($request->session()->get('temp_user_id')) {
+            if($request->session()->get('temp_user_id')) {
                 Cart::where('temp_user_id', $request->session()->get('temp_user_id'))
-                    ->update(
-                        [
-                            'user_id' => $user_id,
-                            'temp_user_id' => null
-                        ]
-                    );
+                        ->update(
+                                [
+                                    'user_id' => $user_id,
+                                    'temp_user_id' => 0
+                                ]
+                );
 
                 Session::forget('temp_user_id');
             }
-            $carts = Cart::where('user_id', $user_id)->get();
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
         } else {
             $temp_user_id = $request->session()->get('temp_user_id');
-            $carts = ($temp_user_id != null) ? Cart::where('temp_user_id', $temp_user_id)->get() : [];
-        }
-        if (count($carts) > 0) {
-            $carts->toQuery()->update(['shipping_cost' => 0]);
-            $carts = $carts->fresh();
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
         }
 
-        return view('frontend.view_cart', compact('carts'));
+       return view('frontend.view_cart', compact('categories', 'carts'));
     }
 
     public function showCartModal(Request $request)
     {
         $product = Product::find($request->id);
-        return view('frontend.partials.cart.addToCart', compact('product'));
+        return view('frontend.partials.addToCart', compact('product'));
     }
 
-    public function showCartModalAuction(Request $request)
+    public function updateNavCart(Request $request)
     {
-        $product = Product::find($request->id);
-        return view('auction.frontend.addToCartAuction', compact('product'));
+        return view('frontend.partials.cart');
     }
 
     public function addToCart(Request $request)
     {
-        $authUser = auth()->user();
-        if($authUser != null) {
-            $user_id = $authUser->id;
+		//dd($request->all());
+        $product = Product::find($request->id);
+		$carts = array();
+        $data = array();
+        
+        if(auth()->user() != null) {
+            $user_id = Auth::user()->id;
             $data['user_id'] = $user_id;
-            $carts = Cart::where('user_id', $user_id)->get();
+			$data['product_id'] = $product->id;
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
         } else {
             if($request->session()->get('temp_user_id')) {
                 $temp_user_id = $request->session()->get('temp_user_id');
@@ -71,223 +77,337 @@ class CartController extends Controller
                 $request->session()->put('temp_user_id', $temp_user_id);
             }
             $data['temp_user_id'] = $temp_user_id;
-            $carts = Cart::where('temp_user_id', $temp_user_id)->get();
+			$data['product_id'] = $product->id;
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
+        }
+		//dd($user_id);
+		
+        //$data = array();
+
+		
+        $str = '';
+        $tax = 0;
+
+        if($product->digital != 1 && $request->quantity < $product->min_qty) {
+            return array('status' => 0, 'view' => view('frontend.partials.minQtyNotSatisfied', [
+                'min_qty' => $product->min_qty
+            ])->render());
         }
 
-        $check_auction_in_cart = CartUtility::check_auction_in_cart($carts);
-        $product = Product::find($request->id);
-        $carts = array();
-
-        if($check_auction_in_cart && $product->auction_product == 0) {
-            return array(
-                'status' => 0,
-                'cart_count' => count($carts),
-                'modal_view' => view('frontend.partials.cart.removeAuctionProductFromCart')->render(),
-                'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-            );
-        }
-
-        $quantity = $request['quantity'];
-
-        if ($quantity < $product->min_qty) {
-            return array(
-                'status' => 0,
-                'cart_count' => count($carts),
-                'modal_view' => view('frontend.partials.minQtyNotSatisfied', ['min_qty' => $product->min_qty])->render(),
-                'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-            );
-        }
 
         //check the color enabled or disabled for the product
-        $str = CartUtility::create_cart_variant($product, $request->all());
-        $product_stock = $product->stocks->where('variant', $str)->first();
-
-        if($authUser != null) {
-            $user_id = $authUser->id;
-            $cart = Cart::firstOrNew([
-                'variation' => $str,
-                'user_id' => $user_id,
-                'product_id' => $request['id']
-            ]);
-        } else {
-            $temp_user_id = $request->session()->get('temp_user_id');
-            $cart = Cart::firstOrNew([
-                'variation' => $str,
-                'temp_user_id' => $temp_user_id,
-                'product_id' => $request['id']
-            ]);
+        if($request->has('color')){
+            $data['color'] = $request['color'];
+            $str = Color::where('code', $request['color'])->first()->name;
         }
 
-        if ($cart->exists && $product->digital == 0) {
-            if ($product->auction_product == 1 && ($cart->product_id == $product->id)) {
-                return array(
-                    'status' => 0,
-                    'cart_count' => count($carts),
-                    'modal_view' => view('frontend.partials.cart.auctionProductAlredayAddedCart')->render(),
-                    'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-                );
+        if ($product->digital != 1) {
+            //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
+            foreach (json_decode(Product::find($request->id)->choice_options) as $key => $choice) {
+                if($str != null){
+                    $str .= '-'.str_replace(' ', '', $request['attribute_id_'.$choice->attribute_id]);
+                }
+                else{
+                    $str .= str_replace(' ', '', $request['attribute_id_'.$choice->attribute_id]);
+                }
             }
-            if ($product_stock->qty < $cart->quantity + $request['quantity']) {
-                return array(
-                    'status' => 0,
-                    'cart_count' => count($carts),
-                    'modal_view' => view('frontend.partials.outOfStockCart')->render(),
-                    'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-                );
+        }
+
+        $data['variation'] = $str;
+
+        if($str != null && $product->variant_product){
+            $product_stock = $product->stocks->where('variant', $str)->first();
+            $price = $product_stock->price;
+            $quantity = $product_stock->qty;
+			$mrp = $product_stock->price;
+			$variant_discount = $product_stock->discount_price;
+			$variant_discount_type = $product_stock->discount_type;
+			$shipping = $product->shipping_cost * $request['quantity'] ;
+			$brand_id = $product_stock->product->brand_id;
+            if($quantity < $request['quantity']){
+                return array('status' => 0, 'view' => view('frontend.partials.outOfStockCart')->render());
             }
-            $quantity = $cart->quantity + $request['quantity'];
+        }
+        else{
+            $price = $product->unit_price;
+			$mrp = $product->unit_price;
+			$brand_id = $product->brand_id;
+			$shipping = $product->shipping_cost * $request['quantity'];
+        }
+//dd($shipping);
+        //discount calculation based on flash deal and regular discount
+        //calculation of taxes
+        $flash_deals = \App\FlashDeal::where('status', 1)->get();
+		
+        $inFlashDeal = false;
+        foreach ($flash_deals as $flash_deal) {
+            if ($flash_deal != null && $flash_deal->status == 1  && strtotime(date('d-m-Y')) >= $flash_deal->start_date && strtotime(date('d-m-Y')) <= $flash_deal->end_date && \App\FlashDealProduct::where('flash_deal_id', $flash_deal->id)->where('product_id', $product->id)->first() != null) 
+			{
+                $flash_deal_product = \App\FlashDealProduct::where('flash_deal_id', $flash_deal->id)->where('product_id', $product->id)->first();
+                if($flash_deal_product->discount_type == 'percent'){
+                    $price -= ($price*$flash_deal_product->discount)/100;
+					$discount_price_data = $flash_deal_product->discount;
+					$data['products_discount_price'] = $discount_price_data;
+                }
+                elseif($flash_deal_product->discount_type == 'amount'){
+                    $price -= $flash_deal_product->discount;
+					$discount_price_data = $flash_deal_product->discount;
+					$data['products_discount_price'] = $discount_price_data;
+                }
+				
+                $inFlashDeal = true;
+                break;
+            }
+			
+        }
+		
+		
+        if (!$inFlashDeal) {
+			if($variant_discount_type == 'percent'){
+                $price -= ($price*$variant_discount)/100;
+				//dd($variant_discount);
+            }
+            elseif($variant_discount_type == 'amount'){
+                $price -= $variant_discount;
+            }
+            /*if($product->discount_type == 'percent'){
+                $price -= ($price*$product->discount)/100;
+            }
+            elseif($product->discount_type == 'amount'){
+                $price -= $product->discount;
+            }*/
         }
 
-        $price = CartUtility::get_price($product, $product_stock, $request->quantity);
-        $tax = CartUtility::tax_calculation($product, $price);
-
-        CartUtility::save_cart_data($cart, $product, $price, $tax, $quantity);
-
-        if($authUser != null) {
-            $user_id = $authUser->id;
-            $carts = Cart::where('user_id', $user_id)->get();
-        } else {
-            $temp_user_id = $request->session()->get('temp_user_id');
-            $carts = Cart::where('temp_user_id', $temp_user_id)->get();
+        if($product->tax_type == 'percent'){
+            $tax = ($price*$product->tax)/100;
+        }
+        elseif($product->tax_type == 'amount'){
+            $tax = $product->tax;
+        }
+        
+        
+        $seller = Seller::whereHas('user', function ($query) use ($product) {
+            $query->where('user_type', 'seller')->where('brand_id', $product->brand_id);
+        })->first();
+        
+        if ($seller && $seller->selected_plan) {
+            $commission_percentage = $seller->selected_plan;
+        } 
+        //  Log::info('Selected Plan: ' . $commission_percentage);
+// 		$commission_percentage = BusinessSetting::where('type', 'vendor_commission')->first()->value;
+        $data['quantity'] = $request['quantity'];
+        $data['price'] = $price;
+        $data['tax'] = $tax;
+		$data['mrp'] = $mrp;
+		$data['brand'] = $brand_id;
+        $data['shipping'] = $shipping;
+        $data['product_referral_code'] = null;
+        $data['digital'] = $product->digital;
+		$data['seller_commission'] = $commission_percentage;
+		$data['cart_total_mrp'] = $mrp * $request['quantity'];
+		$data['pre_commission'] = (($mrp * $request['quantity']) * ($commission_percentage/100)) ;
+		$data['post_commission'] = ($mrp * $request['quantity']) - (($mrp * $request['quantity']) * ($commission_percentage/100));
+		
+		//dd($data);
+        if ($request['quantity'] == null){
+            $data['quantity'] = 1;
         }
 
-        return array(
-            'status' => 1,
-            'cart_count' => count($carts),
-            'modal_view' => view('frontend.partials.cart.addedToCart', compact('product', 'cart'))->render(),
-            'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-        );
+        if(Cookie::has('referred_product_id') && Cookie::get('referred_product_id') == $product->id) {
+            $data['product_referral_code'] = Cookie::get('product_referral_code');
+        }
+
+        if($carts && count($carts) > 0){
+            $foundInCart = false;
+            //$cart = collect();
+
+            foreach ($carts as $key => $cartItem){
+                if($cartItem['id'] == $request->id){
+                    if($cartItem['variant'] == $str && $str != null){
+                        $product_stock = $product->stocks->where('variant', $str)->first();
+                        $quantity = $product_stock->qty;
+
+                        if($quantity < $cartItem['quantity'] + $request['quantity']){
+                            return array('status' => 0, 'view' => view('frontend.partials.outOfStockCart')->render());
+                        }
+                        else{
+                            $foundInCart = true;
+                            $cartItem['quantity'] += $request['quantity'];
+                        }
+                    }
+                }
+               // $cart->push($cartItem);
+            }
+
+            if (!$foundInCart) {
+				 Cart::create($data);
+                //$cart->push($data);
+            }
+            //$request->session()->put('cart', $cart);
+        }
+        else{
+			Cart::create($data);
+           // $cart = collect([$data]);
+          //  $request->session()->put('cart', $cart);
+        }
+		//dd($data);
+        return array('status' => 1, 'view' => view('frontend.partials.addedToCart', compact('product', 'data'))->render());
     }
 
     //removes from Cart
     public function removeFromCart(Request $request)
     {
-        Cart::destroy($request->id);
-        $authUser = auth()->user();
-        if ($authUser != null) {
-            $user_id = $authUser->id;
-            $carts = Cart::where('user_id', $user_id)->get();
-        } else {
-            $temp_user_id = $request->session()->get('temp_user_id');
-            $carts = Cart::where('temp_user_id', $temp_user_id)->get();
+		//dd($request->all());
+       /* if($request->session()->has('cart')){
+            $cart = $request->session()->get('cart', collect([]));
+            $cart->forget($request->key);
+            $request->session()->put('cart', $cart);
         }
 
-        return array(
-            'cart_count' => count($carts),
-            'cart_view' => view('frontend.partials.cart.cart_details', compact('carts'))->render(),
-            'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-        );
+        return view('frontend.partials.cart_details');*/
+		 Cart::destroy($request->id);
+        if(auth()->user() != null) {
+            $user_id = Auth::user()->id;
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
+        } else {
+            $temp_user_id = $request->session()->get('temp_user_id');
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
+			//dd($carts);
+        }
+        
+        
+        return view('frontend.partials.cart_details', compact('carts'));
     }
-
+ 
     //updated the quantity for a cart item
     public function updateQuantity(Request $request)
     {
-        $cartItem = Cart::findOrFail($request->id);
+		//dd($request->all());
 
-        if ($cartItem['id'] == $request->id) {
-            $product = Product::find($cartItem['product_id']);
-            $product_stock = $product->stocks->where('variant', $cartItem['variation'])->first();
+        $object = Cart::findOrFail($request->id);
+        
+         $seller = Seller::whereHas('user', function ($query) use ($object) {
+            $query->where('brand_id', $object->brand);
+        })->first();
+        
+        
+        Log::info('Selected Plan: ' . $seller);
+        
+        if ($seller && $seller->selected_plan) {
+            $commission_percentage = $seller->selected_plan;
+        } 
+        
+        
+        
+        
+        
+        
+        // $commission_percentage = BusinessSetting::where('type', 'vendor_commission')->first()->value;
+        
+        
+        if($object['id'] == $request->id){
+            $product = \App\Product::find($object['product_id']);
+//                if($object['variant'] != null && $product->variant_product){
+            
+            $product_stock = $product->stocks->where('variant', $object['variation'])->first();
             $quantity = $product_stock->qty;
-            $price = $product_stock->price;
-
-            //discount calculation
-            $discount_applicable = false;
-
-            if ($product->discount_start_date == null) {
-                $discount_applicable = true;
-            } elseif (
-                strtotime(date('d-m-Y H:i:s')) >= $product->discount_start_date &&
-                strtotime(date('d-m-Y H:i:s')) <= $product->discount_end_date
-            ) {
-                $discount_applicable = true;
-            }
-
-            if ($discount_applicable) {
-                if ($product->discount_type == 'percent') {
-                    $price -= ($price * $product->discount) / 100;
-                } elseif ($product->discount_type == 'amount') {
-                    $price -= $product->discount;
+            if($quantity >= $request->quantity) {
+                if($request->quantity >= $product->min_qty){
+                    $object['quantity'] = $request->quantity;
+					$object['seller_commission'] = $commission_percentage;
+					$object['cart_total_mrp'] = $object['mrp'] * $request['quantity'];
+					$object['pre_commission'] = (($object['mrp'] * $request['quantity']) * ($commission_percentage/100)) ;
+					$object['post_commission'] = ($object['mrp'] * $request['quantity']) - (($object['mrp'] * $request['quantity']) * ($commission_percentage/100));
+					
                 }
             }
-
-            if ($quantity >= $request->quantity) {
-                if ($request->quantity >= $product->min_qty) {
-                    $cartItem['quantity'] = $request->quantity;
-                }
-            }
-
-            if ($product->wholesale_product) {
-                $wholesalePrice = $product_stock->wholesalePrices->where('min_qty', '<=', $request->quantity)->where('max_qty', '>=', $request->quantity)->first();
-                if ($wholesalePrice) {
-                    $price = $wholesalePrice->price;
-                }
-            }
-
-            $cartItem['price'] = $price;
-            $cartItem->save();
+            
+            $object->save();
         }
-
-        if (auth()->user() != null) {
+        
+        if(auth()->user() != null) {
             $user_id = Auth::user()->id;
-            $carts = Cart::where('user_id', $user_id)->get();
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
         } else {
             $temp_user_id = $request->session()->get('temp_user_id');
-            $carts = Cart::where('temp_user_id', $temp_user_id)->get();
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
         }
-
-        return array(
-            'cart_count' => count($carts),
-            'cart_view' => view('frontend.partials.cart.cart_details', compact('carts'))->render(),
-            'nav_cart_view' => view('frontend.partials.cart.cart')->render(),
-        );
+        
+        return view('frontend.partials.cart_details', compact('carts'));
     }
-
-    public function updateCartStatus(Request $request)
+    public function updateQuantitys(Request $request)
     {
-        $product_ids = $request->product_id;
-
-        if (auth()->user() != null) {
-            $user_id = Auth::user()->id;
-            $carts = Cart::where('user_id', $user_id)->get();
-        } else {
-            $temp_user_id = $request->session()->get('temp_user_id');
-            $carts = Cart::where('temp_user_id', $temp_user_id)->get();
-        }
-
-        $coupon_applied = $carts->toQuery()->where('coupon_applied', 1)->first();
-        if($coupon_applied != null){
-            $owner_id = $coupon_applied->owner_id;
-            $coupon_code = $coupon_applied->coupon_code;
-            $user_carts = $carts->toQuery()->where('owner_id', $owner_id)->get();
-            $coupon_discount = $user_carts->toQuery()->sum('discount');
-            $user_carts->toQuery()->update(
-                [
-                    'discount' => 0.00,
-                    'coupon_code' => '',
-                    'coupon_applied' => 0
-                ]
-            );
-        }
-
-        $carts->toQuery()->update(['status' => 0]);
-        if($product_ids != null){
-            if($coupon_applied != null){
-                $active_user_carts = $user_carts->toQuery()->whereIn('product_id', $product_ids)->get();
-                if (count($active_user_carts) > 0) {
-                    $active_user_carts->toQuery()->update(
-                        [
-                            'discount' => $coupon_discount / count($active_user_carts),
-                            'coupon_code' => $coupon_code,
-                            'coupon_applied' => 1
-                        ]
-                    );
+		$commission_percentage = BusinessSetting::where('type', 'vendor_commission')->first()->value;
+		$object = Cart::findOrFail($request->id);        
+        if($object['id'] == $request->id){
+            $product = \App\Product::find($object['product_id']);
+//                if($object['variant'] != null && $product->variant_product){
+            
+            $product_stock = $product->stocks->where('variant', $object['variation'])->first();
+            $quantity = $product_stock->qty;
+            if($quantity >= $request->quantity) {
+                if($request->quantity >= $product->min_qty){
+                    $object['quantity'] = $request->quantity;
+					$object['seller_commission'] = $commission_percentage;
+					$object['cart_total_mrp'] = $object['mrp'] * $request['quantity'];
+					$object['pre_commission'] = (($object['mrp'] * $request['quantity']) * ($commission_percentage/100)) ;
+					$object['post_commission'] = ($object['mrp'] * $request['quantity']) - (($object['mrp'] * $request['quantity']) * ($commission_percentage/100));
+					
+		
                 }
             }
-
-            $carts->toQuery()->whereIn('product_id', $product_ids)->update(['status' => 1]);
+            
+            $object->save();
         }
-        $carts = $carts->fresh();
-
-        return view('frontend.partials.cart.cart_details', compact('carts'))->render();
+        
+        if(auth()->user() != null) {
+            $user_id = Auth::user()->id;
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
+        } else {
+            $temp_user_id = $request->session()->get('temp_user_id');
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
+        }
+        
+        return view('frontend.partials.ajax_payment_select', compact('carts'));
+		
     }
+    public function removeFromCarts(Request $request)
+    {
+		//dd($request->id);
+		 Cart::destroy($request->id);
+        if(auth()->user() != null) {
+            $user_id = Auth::user()->id;
+            $carts = Cart::where('user_id', $user_id)->where('status',1)->get();
+			if(count($carts) > 0)
+			{
+				return Response::json(['view' => View::make('frontend.partials.ajax_payment_select')->render(), 'status'=>1]);
+			}
+			else
+			{
+				return Response::json(['view' => View::make('frontend.partials.ajax_payment_select')->render(), 'status'=>0]);
+			}
+        } else {
+            $temp_user_id = $request->session()->get('temp_user_id');
+            $carts = Cart::where('temp_user_id', $temp_user_id)->where('status',1)->get();
+			//dd($carts);
+        }
+		
+		  return view('frontend.partials.ajax_payment_select');
+        /*if($request->session()->has('cart')){
+            $cart = $request->session()->get('cart', collect([]));
+            $cart->forget($request->key);
+            $request->session()->put('cart', $cart);
+			if(count($cart) > 0)
+			{
+				return Response::json(['view' => View::make('frontend.partials.ajax_payment_select')->render(), 'status'=>1]);
+			}
+			else
+			{
+				return Response::json(['view' => View::make('frontend.partials.ajax_payment_select')->render(), 'status'=>0]);
+			}
+        }
+        return view('frontend.partials.ajax_payment_select');*/
+    }
+    
+
 }

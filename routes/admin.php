@@ -13,7 +13,10 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\OrderController;
-
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ContactController;
 
 
 /*
@@ -102,6 +105,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin']], function 
 	Route::post('/giftproducts/sku_combination_edit', 'sku_combination_edit')->name('giftproducts.sku_combination_edit');
 	Route::post('/giftproducts/featured', 'updateFeatured')->name('giftproducts.featured');
 	Route::post('/giftproducts/published', 'updatePublished')->name('giftproducts.published');
+
     });
 
     //origin
@@ -161,26 +165,53 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin']], function 
     });
 
     // All Orders
-
     Route::controller(OrderController::class)->group(function () {
 	Route::get('/inhouse-orders', 'admin_orders')->name('inhouse_orders.index');
 	Route::get('/inhouse-orders/{id}/show', 'show')->name('inhouse_orders.show');
+
+    // Inactive Orders
+	Route::get('/inactive-inhouse-orders', 'inactive_order_index')->name('inhouse_orders.inactive_order_index');
+	Route::get('/inactive-inhouse-orders/{id}/show', 'inactive_order_show')->name('inhouse_orders.inactive_order_show');
+
+    Route::get('invoice/customer/{order_id}', 'customer_invoice_download')->name('customer.invoice.download');
+
+
+    });
+    
+    // Categories
+    Route::controller(HomeController::class)->group(function () {
+        Route::get('/admin-categories', 'all_categories_admin')->name('admincategories.all');
+        Route::get('/shop-by-ethics/{department}', 'search')->name('department.category');
+    });
+
+	Route::resource('categories',CategoryController::class);
+    Route::controller(CategoryController::class)->group(function () {
+        Route::get('/categories/edit/{id}', 'edit')->name('categories.edit');
+        Route::get('/categories/destroy/{id}', 'destroy')->name('categories.destroy');
+        Route::post('/categories/featured', 'updateFeatured')->name('categories.featured');
+        Route::get('/categoriesdestroy/destroy/{id}', 'temdestroy')->name('categories.temdestroy');
+        Route::get('/product-categories', 'product_category')->name('product.categories');
+        Route::post('/categories/export-bulk-product-category', 'export_bulk_product_category')->name('export.bulk.product.categories');
+        Route::get('/orders/destroy/{id}', 'destroy')->name('orders.destroy');
+	    Route::get('/temdestroy/destroy/{id}', 'temdestroy')->name('orders.temdestroy');
+        Route::post('/categories/export-bulk-category-product', 'export_bulk_category_product')->name('export.bulk.category.products');
+        Route::post('/export-selected-category-products', 'export_selected_category_products')->name('export.selected.category.products');
+      
+
     });
 
 
+    // // Sub Sub Categories
+    // Route::resource('subcategories','SubCategoryController');
+	// Route::get('/subcategories/edit/{id}', 'SubCategoryController@edit')->name('subcategories.edit');
+	// Route::get('/subcategories/destroy/{id}', 'SubCategoryController@destroy')->name('subcategories.destroy');
 
+    // // Sub Sub Categories
+	// Route::resource('subsubcategories','SubSubCategoryController');
+	// Route::get('/subsubcategories/edit/{id}', 'SubSubCategoryController@edit')->name('subsubcategories.edit');
+	// Route::get('/subsubcategories/destroy/{id}', 'SubSubCategoryController@destroy')->name('subsubcategories.destroy');
 
-
-
-
-
-
-
-
-
-
-
-
+   
 
     Route::resource('profile', ProfileController::class);
 
@@ -225,6 +256,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin']], function 
         // Order Configuration
         Route::get('/order-configuration', 'order_configuration')->name('order_configuration.index');
     });
+
+    Route::resource('contact-details', ContactController::class);
 
     Route::resource('notification-type', NotificationTypeController::class);
     Route::controller(NotificationTypeController::class)->group(function () {

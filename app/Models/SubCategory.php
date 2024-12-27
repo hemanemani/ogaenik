@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\PreventDemoModeChanges;
 
 /**
  * App\Models\SubCategory
@@ -26,8 +25,6 @@ use App\Traits\PreventDemoModeChanges;
 
 class SubCategory extends Model
 {
-    use PreventDemoModeChanges;
-
 
     public function category()
     {

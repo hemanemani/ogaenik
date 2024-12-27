@@ -6,16 +6,22 @@
 @endphp
 
 <div class="card">
-  
+   
       <div class="card-header row gutters-5">
         <div class="col text-center text-md-left">
-          <h5 class="mb-md-0 h6">{{ translate('Inhouse Orders') }}</h5>
+          <h5 class="mb-md-0 h6">{{ translate('Inactive Records for Orders') }}</h5>
         </div>
+       
+         
+
           
+         
+        
       </div>
    
+
     <div class="card-body">
-        <table class="table datatables mb-0">
+        <table class="table datatables mb-0" id="">
             <thead>
                 <tr>
                     <th>#</th>
@@ -35,28 +41,30 @@
             <tbody>
                 @foreach ($orders as $key => $order_id)
                     @php
-                        $order = \App\Models\Order::find($order_id->id);
-                    @endphp
+                        $order = \App\Order::find($order_id->id);
+						$orderdetails = \App\OrderDetail::where('order_id',$order_id->id)->first()->user_id;
+						$delete_user = \App\Userdelete:: find($orderdetails);
+						@endphp
                     @if($order != null)
                         <tr>
                             <td>
-                                {{ ($key+1) }}
+                                {{ ($key+1) + ($orders->currentPage() - 1)*$orders->perPage() }}
                             </td>
                             <td>
                                 {{ $order->code }}@if($order->viewed == 0) <span class="badge badge-inline badge-info">{{translate('New')}}</span>@endif
                             </td>
                             <td>
-                                {{ count($order->orderDetails) }}
+                                {{ count($order->orderDetails->where('seller_id', $admin_user_id)) }}
                             </td>
                             <td>
-                                @if ($order->user != null)
-                                    {{ $order->user->name }} {{ $order->user->lastname }}
-                                @else
-                                    Guest ({{ $order->guest_id }})
-                                @endif
+							@if($delete_user != null)
+							 {{ $delete_user['name'] }} 
+							@else
+                             {{ $order->user['name'] }}
+							@endif
                             </td>
                             <td>
-                                {{ single_price($order->orderDetails->sum('price') + $order->orderDetails->where('seller_id', $admin_user_id)->sum('tax')) }}
+                                {{ single_price($order->orderDetails->where('seller_id', $admin_user_id)->sum('price') + $order->orderDetails->where('seller_id', $admin_user_id)->sum('tax')) }}
                             </td>
                             <td>
                                 @php
@@ -68,7 +76,7 @@
                                 {{ translate(ucfirst(str_replace('_', ' ', $order->payment_type))) }}
                             </td>
                             <td>
-                                @if ($order->payment_status == 'paid')
+                                @if ($order->orderDetails->where('seller_id',  $admin_user_id)->first()->payment_status == 'paid')
                                   <span class="badge badge-inline badge-success">{{translate('Paid')}}</span>
                                 @else
                                   <span class="badge badge-inline badge-danger">{{translate('Unpaid')}}</span>
@@ -85,18 +93,10 @@
                             @endif
 
                             <td class="text-right">
-                                <a class="btn btn-soft-primary btn-icon btn-circle btn-sm" href="{{route('inhouse_orders.show', encrypt($order->id))}}" title="{{ translate('View') }}">
-                                    <i class="fa-regular fa-eye"></i>
+                                <a class="btn btn-soft-primary btn-icon btn-circle btn-sm" href="{{route('inhouse_orders.inactive_order_show', encrypt($order->id))}}" title="{{ translate('View') }}">
+                                    <i class="las la-eye"></i>
                                 </a>
-                                <a class="btn btn-soft-primary btn-icon btn-circle btn-sm" href="{{ route('customer.invoice.download', $order->id) }}" title="{{ translate('Download Invoice') }}">
-                                    <i class="fa-solid fa-download"></i>
-                                </a>
-                                <a href="#" class="btn btn-soft-danger btn-icon btn-circle btn-sm confirm-delete" data-href="{{route('orders.destroy', $order->id)}}" title="{{ translate('Delete') }}">
-                                    <i class="fa-solid fa-trash"></i>
-                                </a> 
-                                <a href="#" class="btn btn-soft-secondary btn-icon btn-circle btn-sm temporary-delete" data-href="{{route('orders.temdestroy', $order->id)}}" title="{{ translate('Delete') }}">
-                              		<i class="fa-solid fa-trash"></i>
-                           		</a>
+                               
                             </td>
                         </tr>
                     @endif

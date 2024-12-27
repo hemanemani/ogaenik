@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\PreventDemoModeChanges;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -28,8 +27,6 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class SubSubCategory extends Model
 {
-    use PreventDemoModeChanges;
-
     protected static function boot()
     {
         parent::boot();

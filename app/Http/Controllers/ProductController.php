@@ -305,13 +305,7 @@ class ProductController extends Controller
             'flash_deal_id', 'flash_discount', 'flash_discount_type'
         ]), $product);
 
-        //VAT & Tax
-        if ($request->tax_id) {
-            $product->taxes()->delete();
-            $this->productTaxService->store($request->only([
-                'tax_id', 'tax', 'tax_type', 'product_id'
-            ]));
-        }
+        
 
         // Frequently Bought Products
         $product->frequently_bought_products()->delete();
@@ -375,7 +369,6 @@ class ProductController extends Controller
         $product->product_translations()->delete();
         $product->categories()->detach();
         $product->stocks()->delete();
-        $product->taxes()->delete();
         $product->frequently_bought_products()->delete();
         $product->last_viewed_products()->delete();
         $product->flash_deal_products()->delete();
@@ -423,8 +416,7 @@ class ProductController extends Controller
         //Product Stock
         $this->productStockService->product_duplicate_store($product->stocks, $product_new);
 
-        //VAT & Tax
-        $this->productTaxService->product_duplicate_store($product->taxes, $product_new);
+        
         
         // Product Categories
         foreach($product->product_categories as $product_category){

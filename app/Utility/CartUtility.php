@@ -70,19 +70,7 @@ class CartUtility
         return $price;
     }
 
-    public static function tax_calculation($product, $price)
-    {
-        $tax = 0;
-        foreach ($product->taxes as $product_tax) {
-            if ($product_tax->tax_type == 'percent') {
-                $tax += ($price * $product_tax->tax) / 100;
-            } elseif ($product_tax->tax_type == 'amount') {
-                $tax += $product_tax->tax;
-            }
-        }
-
-        return $tax;
-    }
+    
 
     public static function save_cart_data($cart, $product, $price, $tax, $quantity)
     {

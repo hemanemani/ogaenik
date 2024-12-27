@@ -153,7 +153,7 @@ class GiftProductController extends Controller
      */
     public function store(Request $request)
     {
-        $refund_request_addon = \App\Addon::where('unique_identifier', 'refund_request')->first();
+        $refund_request_addon = \App\Models\Addon::where('unique_identifier', 'refund_request')->first();
 
         $product = new Product;
         $product->name = $request->name;
@@ -352,7 +352,7 @@ class GiftProductController extends Controller
             return redirect()->route('giftproducts.admin');
         }
         else{
-            if(\App\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
+            if(\App\Models\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Models\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
                 $seller = Auth::user()->seller;
                 $seller->remaining_uploads -= 1;
                 $seller->save();
@@ -417,7 +417,7 @@ class GiftProductController extends Controller
     public function update(Request $request, $id)
     {
         //dd($request->all());
-        $refund_request_addon       = \App\Addon::where('unique_identifier', 'refund_request')->first();
+        $refund_request_addon       = \App\Models\Addon::where('unique_identifier', 'refund_request')->first();
         $product                    = Product::findOrFail($id);
         $product->category_id       = $request->category_id;
         $product->brand_id          = $request->brand_id;
@@ -717,7 +717,7 @@ class GiftProductController extends Controller
         $product = Product::findOrFail($request->id);
         $product->published = $request->status;
 
-        if($product->added_by == 'seller' && \App\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
+        if($product->added_by == 'seller' && \App\Models\Addon::where('unique_identifier', 'seller_subscription')->first() != null && \App\Models\Addon::where('unique_identifier', 'seller_subscription')->first()->activated){
             $seller = $product->user->seller;
             if($seller->invalid_at != null && Carbon::now()->diffInDays(Carbon::parse($seller->invalid_at), false) <= 0){
                 return 0;
